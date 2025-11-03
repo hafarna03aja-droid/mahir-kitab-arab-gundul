@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useLiveConversation, ConnectionState } from '../hooks/useLiveConversation';
 import Button from './common/Button';
@@ -12,6 +13,7 @@ const Conversation: React.FC = () => {
     inputTranscription,
     outputTranscription,
     fullTranscript,
+    errorMessage,
   } = useLiveConversation();
 
   const [isOfflineMode, setIsOfflineMode] = useState(false);
@@ -98,7 +100,7 @@ const Conversation: React.FC = () => {
       case ConnectionState.DISCONNECTED:
         return "Sesi berakhir. Tekan 'Mulai Tutor' untuk berlatih lagi.";
       case ConnectionState.ERROR:
-        return "Terjadi kesalahan. Silakan periksa konsol dan coba lagi.";
+        return errorMessage || "Terjadi kesalahan. Silakan periksa konsol dan coba lagi.";
       default:
         return "Selamat datang di Tutor Bahasa Arab Langsung.";
     }
@@ -206,7 +208,9 @@ const Conversation: React.FC = () => {
         </div>
 
         <div className={`p-4 rounded-md mb-6 text-center transition-colors ${
-            connectionState === ConnectionState.CONNECTED || isRecording ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
+             connectionState === ConnectionState.ERROR ? 'bg-red-100 text-red-800' :
+             connectionState === ConnectionState.CONNECTED || isRecording ? 'bg-green-100 text-green-800' : 
+             'bg-amber-100 text-amber-800'
         }`}>
             <p className="font-semibold">{getStatusMessage()}</p>
         </div>

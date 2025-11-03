@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { analyzeText, generateSampleText, generateSpeech } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import type { AnalysisResult } from '../types';
 import Button from './common/Button';
 import Card from './common/Card';
 import Spinner from './common/Spinner';
-import { IconSpeaker, IconFileText, IconFileDoc } from './common/Icon';
+import { IconSpeaker, IconFileText, IconFileDoc, IconTrash } from './common/Icon';
 import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, AlignmentType, WidthType, BorderStyle } from 'docx';
 
 const sampleTopics = [
@@ -14,6 +14,11 @@ const sampleTopics = [
   { title: 'Peribahasa Arab', text: 'مَنْ جَدَّ وَجَدَ' }
 ];
 
+interface HistoryItem extends AnalysisResult {
+  analyzedAt: string;
+}
+
+const HISTORY_KEY = 'mahir-kitab-gundul-analysis-history';
 
 const Analyzer: React.FC = () => {
   const [text, setText] = useState('');
@@ -22,6 +27,30 @@ const Analyzer: React.FC = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [analysisHistory, setAnalysisHistory] = useState<HistoryItem[]>([]);
+
+  // Load history from localStorage on initial component mount
+  useEffect(() => {
+    try {
+      const savedHistory = localStorage.getItem(HISTORY_KEY);
+      if (savedHistory) {
+        setAnalysisHistory(JSON.parse(savedHistory));
+      }
+    } catch (error) {
+      console.error("Gagal memuat riwayat dari localStorage:", error);
+      // If data is corrupted, clear it
+      localStorage.removeItem(HISTORY_KEY);
+    }
+  }, []);
+
+  // Save history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(analysisHistory));
+    } catch (error) {
+      console.error("Gagal menyimpan riwayat ke localStorage:", error);
+    }
+  }, [analysisHistory]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +63,14 @@ const Analyzer: React.FC = () => {
     try {
       const analysisResult = await analyzeText(text);
       setResult(analysisResult);
+      
+      const newHistoryItem: HistoryItem = {
+        ...analysisResult,
+        analyzedAt: new Date().toISOString(),
+      };
+      // Add new item to history and keep only the last 5 items
+      setAnalysisHistory(prev => [newHistoryItem, ...prev].slice(0, 5));
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
@@ -53,6 +90,18 @@ const Analyzer: React.FC = () => {
     } finally {
       setIsGeneratingSample(false);
     }
+  };
+
+  const handleLoadFromHistory = (item: HistoryItem) => {
+    setResult(item);
+    setError(null);
+    const resultElement = document.getElementById('result-display');
+    resultElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const handleClearHistory = () => {
+    setAnalysisHistory([]);
+    setResult(null); // Optionally clear the current view as well
   };
   
   const ResultDisplay: React.FC<{ result: AnalysisResult }> = ({ result }) => {
@@ -297,9 +346,41 @@ const Analyzer: React.FC = () => {
         </form>
       </Card>
       
+      {analysisHistory.length > 0 && (
+        <Card className="mb-6">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-stone-700">Riwayat Analisis</h2>
+                <Button onClick={handleClearHistory} variant="secondary" className="!px-3 !py-1 text-sm">
+                    <IconTrash className="h-4 w-4" />
+                    <span>Bersihkan</span>
+                </Button>
+            </div>
+            <ul className="space-y-2">
+            {analysisHistory.map((item, index) => (
+              <li
+                key={index}
+                onClick={() => handleLoadFromHistory(item)}
+                className="p-3 rounded-md hover:bg-stone-50 cursor-pointer border border-stone-200 transition-colors"
+                title="Muat ulang analisis ini"
+              >
+                <p className="font-arabic text-right truncate" dir="rtl">{item.originalText}</p>
+                <span className="text-xs text-stone-500">
+                  {new Date(item.analyzedAt).toLocaleString('id-ID', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {error && <div className="text-red-500 text-center p-4 bg-red-100 rounded-md">{error}</div>}
 
-      {result && <ResultDisplay result={result} />}
+      <div id="result-display">
+        {result && <ResultDisplay result={result} />}
+      </div>
     </div>
   );
 };

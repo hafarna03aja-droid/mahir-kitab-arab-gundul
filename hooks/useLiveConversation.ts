@@ -1,7 +1,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob as GenAI_Blob, LiveSession } from "@google/genai";
-import { ai } from '../services/geminiService';
+import { getAiClient } from '../services/geminiService';
 import { encode, decode, decodeAudioData } from '../utils/audioUtils';
 
 export enum ConnectionState {
@@ -14,6 +14,7 @@ export enum ConnectionState {
 
 export const useLiveConversation = () => {
   const [connectionState, setConnectionState] = useState<ConnectionState>(ConnectionState.IDLE);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [inputTranscription, setInputTranscription] = useState<string>('');
   const [outputTranscription, setOutputTranscription] = useState<string>('');
   const [fullTranscript, setFullTranscript] = useState<{user: string, model: string}[]>([]);
@@ -41,6 +42,7 @@ export const useLiveConversation = () => {
   // FIX: Removed dependencies on inputTranscription and outputTranscription to prevent re-creation of the function on every transcription update, which caused stale closures.
   const startConversation = useCallback(async () => {
     setConnectionState(ConnectionState.CONNECTING);
+    setErrorMessage(null);
     setInputTranscription('');
     setOutputTranscription('');
     setFullTranscript([]);
@@ -52,8 +54,11 @@ export const useLiveConversation = () => {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Your browser does not support audio recording.");
         setConnectionState(ConnectionState.ERROR);
+        setErrorMessage("Browser Anda tidak mendukung perekaman audio.");
         return;
       }
+      
+      const ai = getAiClient(); // Throws an error if the key is not set
 
       mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       
@@ -143,6 +148,7 @@ export const useLiveConversation = () => {
           },
           onerror: (e: ErrorEvent) => {
             console.error("Live session error:", e);
+            setErrorMessage("Koneksi ke tutor langsung gagal.");
             setConnectionState(ConnectionState.ERROR);
           },
           onclose: () => {
@@ -160,6 +166,7 @@ export const useLiveConversation = () => {
 
     } catch (error) {
       console.error("Failed to start conversation:", error);
+      setErrorMessage(error instanceof Error ? error.message : "Gagal memulai percakapan.");
       setConnectionState(ConnectionState.ERROR);
     }
   }, []);
@@ -196,6 +203,7 @@ export const useLiveConversation = () => {
     stopConversation,
     inputTranscription,
     outputTranscription,
-    fullTranscript
+    fullTranscript,
+    errorMessage
   };
 };

@@ -1,8 +1,18 @@
+
 import { GoogleGenAI, Type, GenerateContentResponse, Modality } from "@google/genai";
 import type { AnalysisResult, ChatMessage } from '../types';
 
-// Per coding guidelines, the API key must be sourced from process.env.API_KEY.
-export const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+const API_KEY_LOCAL_STORAGE = 'gemini-api-key';
+
+// This function dynamically creates a GoogleGenAI instance with the key from localStorage.
+export const getAiClient = () => {
+  const apiKey = localStorage.getItem(API_KEY_LOCAL_STORAGE);
+  if (!apiKey) {
+    throw new Error("Kunci API Gemini belum diatur. Silakan atur di menu Pengaturan (ikon roda gigi di kanan atas).");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
 
 const analysisSchema = {
     type: Type.OBJECT,
@@ -39,6 +49,7 @@ Selain itu, berikan juga teks lengkap yang sudah divokalisasi (harakat lengkap) 
 Teks: "${text}"`;
 
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -56,6 +67,9 @@ Teks: "${text}"`;
         return result as AnalysisResult;
     } catch (error) {
         console.error("Error analyzing text:", error);
+        if (error instanceof Error) {
+            throw error; // Re-throw the specific error from getAiClient or API call
+        }
         throw new Error("Gagal menganalisis teks. Silakan coba lagi.");
     }
 }
@@ -71,6 +85,7 @@ export async function askChatbot(prompt: string, history: ChatMessage[]): Promis
     }));
     
     try {
+        const ai = getAiClient();
         const chat = ai.chats.create({
           model,
           history: geminiHistory,
@@ -92,6 +107,9 @@ export async function askChatbot(prompt: string, history: ChatMessage[]): Promis
         return { text, chunks };
     } catch (error) {
         console.error("Error with chatbot:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
         throw new Error("Maaf, terjadi kesalahan saat berkomunikasi dengan asisten AI.");
     }
 }
@@ -99,6 +117,7 @@ export async function askChatbot(prompt: string, history: ChatMessage[]): Promis
 export async function getQuickResponse(prompt: string): Promise<string> {
     const model = 'gemini-2.5-flash';
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -111,6 +130,9 @@ export async function getQuickResponse(prompt: string): Promise<string> {
         return response.text;
     } catch (error) {
         console.error("Error getting quick response:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
         throw new Error("Gagal mendapatkan respons cepat.");
     }
 }
@@ -120,6 +142,7 @@ export async function generateSampleText(topic: string): Promise<string> {
     const prompt = `Berikan satu contoh teks Arab singkat dan autentik (bisa berupa ayat Al-Quran, kutipan hadis, atau peribahasa Arab) tentang topik "${topic}". Pastikan teksnya tidak terlalu panjang, ideal untuk dianalisis. Kembalikan HANYA teks Arabnya saja, tanpa terjemahan atau penjelasan apa pun.`;
 
     try {
+        const ai = getAiClient();
         const response = await ai.models.generateContent({
             model,
             contents: prompt,
@@ -133,6 +156,9 @@ export async function generateSampleText(topic: string): Promise<string> {
         return response.text.trim().replace(/"/g, '');
     } catch (error) {
         console.error("Error generating sample text:", error);
+        if (error instanceof Error) {
+            throw error;
+        }
         throw new Error("Gagal membuat contoh teks. Silakan coba lagi.");
     }
 }
@@ -140,6 +166,7 @@ export async function generateSampleText(topic: string): Promise<string> {
 export async function generateSpeech(text: string): Promise<string> {
   const model = "gemini-2.5-flash-preview-tts";
   try {
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model,
       contents: [{ parts: [{ text }] }],
@@ -159,6 +186,9 @@ export async function generateSpeech(text: string): Promise<string> {
     return base64Audio;
   } catch (error) {
     console.error("Error generating speech:", error);
+    if (error instanceof Error) {
+        throw error;
+    }
     throw new Error("Gagal menghasilkan audio. Silakan coba lagi.");
   }
 }

@@ -47,7 +47,7 @@ const Chatbot: React.FC = () => {
   const handleQuickResponse = async () => {
       if (!input.trim() || isLoading) return;
       
-      const prompt = `Berikan definisi atau terjemahan yang sangat singkat dan cepat untuk: "${input}"`;
+      const prompt = `Berikan definisi atau terjemahan yang sangat singkat dan cepat untuk: "${input}". Balas hanya dalam Bahasa Indonesia.`;
       const userMessage: ChatMessage = { role: 'user', text: input };
       setMessages(prev => [...prev, userMessage]);
       setInput('');
@@ -94,7 +94,7 @@ const Chatbot: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 flex flex-col h-[80vh]">
+    <div className="p-4 md:p-8 flex flex-col h-[70vh] md:h-[75vh]">
       <div className="flex-grow overflow-y-auto pr-4 space-y-4">
         {messages.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { analyzeText, generateSampleText, generateSpeech } from '../services/geminiService';
+import { analyzeText, generateSpeech } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
 import type { AnalysisResult } from '../types';
 import Button from './common/Button';
@@ -11,7 +12,11 @@ import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, Ta
 const sampleTopics = [
   { title: 'Basmalah', text: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ' },
   { title: 'Hadis Niat', text: 'إِنَّمَا الْأَعْمَالُ بِالنِّيَّاتِ' },
-  { title: 'Peribahasa Arab', text: 'مَنْ جَدَّ وَجَدَ' }
+  { title: 'Peribahasa "Kesungguhan"', text: 'مَنْ جَدَّ وَجَدَ' },
+  { title: 'Hadis "Senyum"', text: 'تَبَسُّمُكَ فِي وَجْهِ أَخِيكَ لَكَ صَدَقَةٌ' },
+  { title: 'Peribahasa "Ilmu"', text: 'اطْلُبُوا الْعِلْمَ مِنَ الْمَهْدِ إِلَى اللَّحْدِ' },
+  { title: 'Ayat "Sabar"', text: 'إِنَّ اللَّهَ مَعَ الصَّابِرِينَ' },
+  { title: 'Takbir', text: 'اللَّهُ أَكْبَرُ' },
 ];
 
 interface HistoryItem extends AnalysisResult {
@@ -22,8 +27,6 @@ const HISTORY_KEY = 'mahir-kitab-gundul-analysis-history';
 
 const Analyzer: React.FC = () => {
   const [text, setText] = useState('');
-  const [customTopic, setCustomTopic] = useState('');
-  const [isGeneratingSample, setIsGeneratingSample] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -75,20 +78,6 @@ const Analyzer: React.FC = () => {
       setError(err instanceof Error ? err.message : 'An unknown error occurred.');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGenerateSample = async () => {
-    if (!customTopic.trim()) return;
-    setIsGeneratingSample(true);
-    setError(null);
-    try {
-      const generatedText = await generateSampleText(customTopic);
-      setText(generatedText);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal membuat contoh teks.');
-    } finally {
-      setIsGeneratingSample(false);
     }
   };
 
@@ -245,29 +234,53 @@ const Analyzer: React.FC = () => {
         </Card>
         <Card>
             <h3 className="text-xl font-semibold text-stone-700 border-b pb-2 mb-3">Analisis Gramatikal (I'rab)</h3>
-            <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-                <thead>
-                <tr>
-                    <th className="border-b-2 border-stone-300 p-3 text-lg font-arabic text-right">الكلمة (Kata)</th>
-                    <th className="border-b-2 border-stone-300 p-3 text-left">الإعراب (Analisis)</th>
-                    <th className="border-b-2 border-stone-300 p-3 text-left">Terjemahan</th>
-                </tr>
-                </thead>
-                <tbody>
-                {result.grammaticalAnalysis.map((item, index) => (
-                    <tr key={index} className="hover:bg-stone-50">
-                    <td className="border-b border-stone-200 p-3 text-lg font-arabic text-right align-top" dir="rtl">{item.word}</td>
-                    <td className="border-b border-stone-200 p-3 align-top">
-                        <span className="font-arabic font-semibold text-stone-800" dir="rtl">{item.i_rab}</span>
-                        <p className="text-sm text-stone-600 mt-1">{item.i_rab_translation}</p>
-                    </td>
-                    <td className="border-b border-stone-200 p-3 align-top">{item.translation}</td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
+            
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                  <thead>
+                  <tr>
+                      <th className="border-b-2 border-stone-300 p-3 text-lg font-arabic text-right">الكلمة (Kata)</th>
+                      <th className="border-b-2 border-stone-300 p-3 text-left">الإعراب (Analisis)</th>
+                      <th className="border-b-2 border-stone-300 p-3 text-left">Terjemahan</th>
+                  </tr>
+                  </thead>
+                  <tbody>
+                  {result.grammaticalAnalysis.map((item, index) => (
+                      <tr key={index} className="hover:bg-stone-50">
+                      <td className="border-b border-stone-200 p-3 text-lg font-arabic text-right align-top" dir="rtl">{item.word}</td>
+                      <td className="border-b border-stone-200 p-3 align-top">
+                          <span className="font-arabic font-semibold text-stone-800" dir="rtl">{item.i_rab}</span>
+                          <p className="text-sm text-stone-600 mt-1">{item.i_rab_translation}</p>
+                      </td>
+                      <td className="border-b border-stone-200 p-3 align-top">{item.translation}</td>
+                      </tr>
+                  ))}
+                  </tbody>
+              </table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+              {result.grammaticalAnalysis.map((item, index) => (
+                <div key={index} className="border border-stone-200 rounded-lg p-4 bg-stone-50">
+                  <div className="flex justify-between items-baseline border-b border-stone-200 pb-2 mb-2">
+                    <span className="text-stone-500 text-sm">Kata</span>
+                    <p className="text-xl font-arabic font-bold text-stone-800" dir="rtl">{item.word}</p>
+                  </div>
+                  <div className="mb-2">
+                    <p className="text-stone-500 text-sm mb-1">Analisis</p>
+                    <span className="font-arabic font-semibold text-stone-800 block text-right" dir="rtl">{item.i_rab}</span>
+                    <p className="text-sm text-stone-600 mt-1 text-right">{item.i_rab_translation}</p>
+                  </div>
+                  <div>
+                    <p className="text-stone-500 text-sm mb-1">Terjemahan</p>
+                    <p className="text-stone-800">{item.translation}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
         </Card>
         <Card>
             <h3 className="text-xl font-semibold text-stone-700 mb-3">Opsi Ekspor</h3>
@@ -295,7 +308,7 @@ const Analyzer: React.FC = () => {
         </p>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <p className="text-stone-600 mb-2 font-semibold">Pilih Contoh Teks atau Buat Sendiri:</p>
+            <p className="text-stone-600 mb-2 font-semibold">Pilih Contoh Teks:</p>
             <div className="flex flex-wrap gap-2">
               {sampleTopics.map((topic) => (
                 <Button 
@@ -304,30 +317,11 @@ const Analyzer: React.FC = () => {
                   variant="secondary" 
                   onClick={() => setText(topic.text)}
                   className="!px-3 !py-1 text-sm"
-                  disabled={isGeneratingSample || isLoading}
+                  disabled={isLoading}
                 >
                   {topic.title}
                 </Button>
               ))}
-            </div>
-            <div className="mt-3 flex gap-2">
-              <input
-                type="text"
-                value={customTopic}
-                onChange={(e) => setCustomTopic(e.target.value)}
-                placeholder="Atau masukkan topik (misal: Sabar)"
-                className="flex-grow p-2 border border-stone-300 rounded-md shadow-inner bg-stone-50 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
-                disabled={isGeneratingSample || isLoading}
-              />
-              <Button 
-                type="button" 
-                variant="secondary" 
-                onClick={handleGenerateSample}
-                disabled={isGeneratingSample || !customTopic.trim() || isLoading}
-                className="!px-3 !py-1"
-              >
-                {isGeneratingSample ? <Spinner /> : 'Buat Contoh'}
-              </Button>
             </div>
           </div>
           <textarea
@@ -336,10 +330,10 @@ const Analyzer: React.FC = () => {
             placeholder="...اكتب النص العربي هنا أو اختر dari contoh di atas"
             className="w-full h-40 p-3 border border-stone-300 rounded-md shadow-inner bg-stone-50 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition text-right font-arabic text-lg"
             dir="rtl"
-            disabled={isLoading || isGeneratingSample}
+            disabled={isLoading}
           />
           <div className="mt-4 flex justify-end">
-            <Button type="submit" disabled={isLoading || !text.trim() || isGeneratingSample}>
+            <Button type="submit" disabled={isLoading || !text.trim()}>
               {isLoading ? <><Spinner /> Menganalisis...</> : 'Analisis Teks'}
             </Button>
           </div>

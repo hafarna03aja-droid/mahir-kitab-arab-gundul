@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const TabButton: React.FC<{ tabName: Tab; label: string; icon: React.ReactNode }> = ({ tabName, label, icon }) => (
     <button
       onClick={() => setActiveTab(tabName)}
-      className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm md:text-base font-semibold transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-800 rounded-t-lg ${
+      className={`flex-1 flex items-center justify-center gap-2 px-2 sm:px-4 py-3 text-sm md:text-base font-semibold transition-colors duration-300 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-stone-800 rounded-t-lg ${
         activeTab === tabName
           ? 'bg-stone-100 text-stone-800 border-b-2 border-amber-500'
           : 'bg-stone-800 text-stone-300 hover:bg-stone-700'

@@ -15,7 +15,7 @@ const Header: React.FC<HeaderProps> = ({ onSettingsClick }) => {
         
         <div className="text-center">
             <h1 className="text-3xl md:text-4xl font-bold text-amber-400 font-arabic">ماهر الكتاب الجندل</h1>
-            <p className="text-stone-300 mt-1 text-lg">Pemandu Berbasis AI Anda untuk Menguasai Teks Arab</p>
+            <p className="text-stone-300 mt-1 text-base md:text-lg">Pemandu Berbasis AI Anda untuk Menguasai Teks Arab</p>
         </div>
         
         <button

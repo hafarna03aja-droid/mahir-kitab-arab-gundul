@@ -1,0 +1,7 @@
+{
+  "name": "Mahir Kitab Gundul",
+  "description": "An advanced AI-powered application to help users master the reading of classical Arabic texts (kitab gundul). Features include AI-powered vowelization and grammatical analysis, a real-time conversational tutor, a knowledgeable chatbot, and text-to-speech for pronunciation practice.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
